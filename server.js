@@ -23,5 +23,16 @@ app.post('/join', (req, res) => {
     }
 });
 
+app.post('/close', (req, res) => {
+    const code = req.body.code;
+    if (rooms[code]) {
+        delete rooms[code];
+        console.log("🗑️ Комната удалена:", code);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: "Room not found" });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Server running on port ' + PORT));

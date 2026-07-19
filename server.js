@@ -1,31 +1,39 @@
-const express = require('express');
-const app = express();
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 
-app.use(express.json());
+const rooms = new Map();
 
-let rooms = {};
-
-app.post('/create', (req, res) => {
+const handler = async (req) => {
+  const url = new URL(req.url);
+  
+  if (url.pathname === "/create" && req.method === "POST") {
+    const body = await req.json();
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    rooms[code] = {
-        ip: req.body.ip,
-        time: Date.now()
-    };
-    setTimeout(() => delete rooms[code], 60000);
-    res.json({ code });
-});
-
-app.post('/join', (req, res) => {
-    const room = rooms[req.body.code];
+    rooms.set(code, {
+      ip: body.ip,
+      time: Date.now()
+    });
+    setTimeout(() => rooms.delete(code), 60000);
+    return new Response(JSON.stringify({ code }), {
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  
+  if (url.pathname === "/join" && req.method === "POST") {
+    const body = await req.json();
+    const room = rooms.get(body.code);
     if (room) {
-        res.json({ ip: room.ip });
-        delete rooms[req.body.code];
-    } else {
-        res.status(404).json({ error: "Room not found" });
+      rooms.delete(body.code);
+      return new Response(JSON.stringify({ ip: room.ip }), {
+        headers: { "Content-Type": "application/json" }
+      });
     }
-});
+    return new Response(JSON.stringify({ error: "Room not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  
+  return new Response("Not found", { status: 404 });
+};
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log('Server running on port ' + PORT);
-});
+serve(handler, { port: 8000 });

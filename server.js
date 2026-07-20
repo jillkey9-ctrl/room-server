@@ -6,17 +6,20 @@ let rooms = {};
 
 app.post('/create', (req, res) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    rooms[code] = { ip: req.body.ip };
-    console.log("✅ Комната создана:", code);
+    rooms[code] = { 
+        ip: req.body.ip, 
+        port: req.body.port || 9999
+    };
+    console.log("✅ Комната создана:", code, "IP:", req.body.ip, "PORT:", req.body.port);
     res.json({ code });
 });
 
 app.post('/join', (req, res) => {
     const room = rooms[req.body.code];
     if (room) {
-        res.json({ ip: room.ip });
+        res.json({ ip: room.ip, port: room.port });
         delete rooms[req.body.code];
-        console.log("✅ Комната найдена!");
+        console.log("✅ Комната найдена! IP:", room.ip, "PORT:", room.port);
     } else {
         res.status(404).json({ error: "Room not found" });
         console.log("❌ Комната не найдена");

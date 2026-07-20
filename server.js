@@ -19,9 +19,7 @@ app.post('/create', (req, res) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     rooms[code] = {
         offer: req.body.offer,
-        hostId: req.body.hostId || 'host',
         created: Date.now(),
-        clients: [],
         candidates: []
     };
     console.log('✅ Room created:', code);
@@ -35,10 +33,7 @@ app.post('/join', (req, res) => {
         return res.status(404).json({ error: 'Room not found' });
     }
     console.log('✅ Join request for room:', req.body.code);
-    res.json({ 
-        offer: room.offer,
-        hostId: room.hostId
-    });
+    res.json({ offer: room.offer });
 });
 
 app.post('/answer', (req, res) => {
@@ -80,15 +75,6 @@ app.post('/close', (req, res) => {
     } else {
         res.status(404).json({ error: 'Room not found' });
     }
-});
-
-app.get('/rooms', (req, res) => {
-    const roomList = Object.keys(rooms).map(code => ({
-        code: code,
-        created: rooms[code].created,
-        clients: rooms[code].clients ? rooms[code].clients.length : 0
-    }));
-    res.json({ rooms: roomList });
 });
 
 const PORT = process.env.PORT || 3000;

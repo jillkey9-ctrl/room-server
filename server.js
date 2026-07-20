@@ -10,6 +10,7 @@ setInterval(() => {
     for (const code in rooms) {
         if (now - rooms[code].created > ROOM_TIMEOUT) {
             delete rooms[code];
+            console.log('🗑️ Room expired:', code);
         }
     }
 }, 60000);
@@ -20,16 +21,20 @@ app.post('/create', (req, res) => {
         offer: req.body.offer,
         hostId: req.body.hostId || 'host',
         created: Date.now(),
-        clients: []
+        clients: [],
+        candidates: []
     };
+    console.log('✅ Room created:', code);
     res.json({ code });
 });
 
 app.post('/join', (req, res) => {
     const room = rooms[req.body.code];
     if (!room) {
+        console.log('❌ Room not found:', req.body.code);
         return res.status(404).json({ error: 'Room not found' });
     }
+    console.log('✅ Join request for room:', req.body.code);
     res.json({ 
         offer: room.offer,
         hostId: room.hostId
@@ -42,6 +47,7 @@ app.post('/answer', (req, res) => {
         return res.status(404).json({ error: 'Room not found' });
     }
     room.answer = req.body.answer;
+    console.log('✅ Answer received for room:', req.body.code);
     res.json({ success: true });
 });
 
@@ -52,6 +58,7 @@ app.post('/candidate', (req, res) => {
     }
     if (!room.candidates) room.candidates = [];
     room.candidates.push(req.body.candidate);
+    console.log('✅ Candidate received for room:', req.body.code);
     res.json({ success: true });
 });
 
@@ -60,6 +67,7 @@ app.post('/get_candidates', (req, res) => {
     if (!room) {
         return res.status(404).json({ error: 'Room not found' });
     }
+    console.log('✅ Candidates requested for room:', req.body.code);
     res.json({ candidates: room.candidates || [] });
 });
 
@@ -67,11 +75,21 @@ app.post('/close', (req, res) => {
     const code = req.body.code;
     if (rooms[code]) {
         delete rooms[code];
+        console.log('🗑️ Room closed:', code);
         res.json({ success: true });
     } else {
         res.status(404).json({ error: 'Room not found' });
     }
 });
 
+app.get('/rooms', (req, res) => {
+    const roomList = Object.keys(rooms).map(code => ({
+        code: code,
+        created: rooms[code].created,
+        clients: rooms[code].clients ? rooms[code].clients.length : 0
+    }));
+    res.json({ rooms: roomList });
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Signaling server running on port ' + PORT));
+app.listen(PORT, () => console.log('🚀 Signaling server running on port ' + PORT));
